@@ -1,38 +1,37 @@
 package main
 
 import (
-
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
-	"time"
 	"strconv"
+	"time"
+
 	"./utils"
-	"encoding/json"
 )
 
-
 type Msg struct {
-	Meta   map[string]interface{} `json:"meta"`
+	Meta    map[string]interface{} `json:"meta"`
 	Content interface{}            `json:"content"`
 }
 
 func send(conn net.Conn) {
-	for i := 0; i <6; i++ {
-		session:=GetSession()
+	for i := 0; i < 1; i++ {
+		session := GetSession()
 		message := &Msg{
-			Meta:map[string]interface{}{
-			"meta":"test",
-			"ID":strconv.Itoa(i),
+			Meta: map[string]interface{}{
+				"meta": "test",
+				"ID":   strconv.Itoa(i),
 			},
-		Content: Msg{
-			Meta:map[string]interface{}{
-			"author":"nucky lu",
+			Content: Msg{
+				Meta: map[string]interface{}{
+					"author": "nucky lu",
+				},
+				Content: session,
 			},
-		Content:session,
-		},
 		}
-		result,_ :=	json.Marshal(message)
+		result, _ := json.Marshal(message)
 		conn.Write(utils.Enpack((result)))
 		//conn.Write([]byte(message))
 		time.Sleep(1 * time.Second)
@@ -41,9 +40,9 @@ func send(conn net.Conn) {
 	defer conn.Close()
 }
 
-func GetSession() string{
-	gs1:=time.Now().Unix()
-	gs2:=strconv.FormatInt(gs1,10)
+func GetSession() string {
+	gs1 := time.Now().Unix()
+	gs2 := strconv.FormatInt(gs1, 10)
 	return gs2
 }
 
@@ -61,10 +60,7 @@ func main() {
 		os.Exit(1)
 	}
 
-
 	fmt.Println("connect success")
 	send(conn)
 
-
 }
-

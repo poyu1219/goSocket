@@ -1,11 +1,9 @@
-
 package utils
 
 import (
 	"bytes"
 	"encoding/binary"
 )
-
 
 /* A custom communication protocol between server and client;
    All the message will be composed by  header + the length of whole message(4 byte int) + message content;
@@ -15,37 +13,38 @@ import (
 */
 
 const (
-	ConstHeader         = "testHeader"
-	ConstHeaderLength   = 10
-	ConstMLength = 4
+	ConstHeader       = "testHeader"
+	ConstHeaderLength = 10
+	ConstMLength      = 4
 )
 
 func Enpack(message []byte) []byte {
 	return append(append([]byte(ConstHeader), IntToBytes(len(message))...), message...)
 }
 
-
+//解封包
 func Depack(buffer []byte) []byte {
-	length := len(buffer)
+	length := len(buffer) //
 
 	var i int
 	data := make([]byte, 32)
 	for i = 0; i < length; i = i + 1 {
 		if length < i+ConstHeaderLength+ConstMLength {
-			break
+			break //封包太短, 連封包頭都未傳完
 		}
 		if string(buffer[i:i+ConstHeaderLength]) == ConstHeader {
 			messageLength := BytesToInt(buffer[i+ConstHeaderLength : i+ConstHeaderLength+ConstMLength])
 			if length < i+ConstHeaderLength+ConstMLength+messageLength {
-				break
+				break //封包長度不對，表示未傳完
 			}
+			//封包內容 - 去掉封包頭
 			data = buffer[i+ConstHeaderLength+ConstMLength : i+ConstHeaderLength+ConstMLength+messageLength]
 
 		}
 	}
 
 	if i == length {
-		return make([]byte, 0)
+		return make([]byte, 0) //表示無資料
 	}
 	return data
 }
@@ -58,7 +57,6 @@ func IntToBytes(n int) []byte {
 	return bytesBuffer.Bytes()
 }
 
-
 func BytesToInt(b []byte) int {
 	bytesBuffer := bytes.NewBuffer(b)
 
@@ -66,4 +64,4 @@ func BytesToInt(b []byte) int {
 	binary.Read(bytesBuffer, binary.BigEndian, &x)
 
 	return int(x)
-}  
+}

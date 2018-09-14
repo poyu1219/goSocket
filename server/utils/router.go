@@ -1,8 +1,10 @@
 package utils
+
 import (
+	"encoding/json"
 	"fmt"
 	"net"
-	"encoding/json"
+	"time"
 )
 
 /*
@@ -15,12 +17,10 @@ import (
 
 */
 
-
 type Msg struct {
-	Meta   map[string]interface{} `json:"meta"`
+	Meta    map[string]interface{} `json:"meta"`
 	Content interface{}            `json:"content"`
 }
-
 
 type Controller interface {
 	Excute(message Msg) []byte
@@ -28,49 +28,50 @@ type Controller interface {
 
 var routers [][2]interface{}
 
-func Route(pred interface{} ,controller Controller) {
+func Route(pred interface{}, controller Controller) {
 	switch pred.(type) {
-	case func(entry Msg)bool:{
-		var arr [2]interface{}
-		arr[0] = pred
-		arr[1] = controller
-		routers = append(routers,arr)
-	}
-	case map[string]interface{}:{
-		defaultPred:= func(entry Msg)bool{
-			for keyPred , valPred := range pred.(map[string]interface{}){
-				val, ok := entry.Meta[keyPred]
-				if !ok {
-					return false
-				}
-				if val != valPred {
-					return false
-				}
-			}
-			return true
+	case func(entry Msg) bool:
+		{
+			var arr [2]interface{}
+			arr[0] = pred
+			arr[1] = controller
+			routers = append(routers, arr)
 		}
-		var arr [2]interface{}
-		arr[0] = defaultPred
-		arr[1] = controller
-		routers = append(routers,arr)
-		fmt.Println(routers)
-	}
+	case map[string]interface{}:
+		{
+			defaultPred := func(entry Msg) bool {
+				for keyPred, valPred := range pred.(map[string]interface{}) {
+					val, ok := entry.Meta[keyPred]
+					if !ok {
+						return false
+					}
+					if val != valPred {
+						return false
+					}
+				}
+				return true
+			}
+			var arr [2]interface{}
+			arr[0] = defaultPred
+			arr[1] = controller
+			routers = append(routers, arr)
+			fmt.Println(routers)
+		}
 	default:
 		fmt.Println("didn't find requested controller")
 	}
 }
 
-
-func TaskDeliver(postdata []byte,conn net.Conn){
-	for _ ,v := range routers{
+func TaskDeliver(postdata []byte, conn net.Conn) {
+	for _, v := range routers {
 		pred := v[0]
 		act := v[1]
 		var entermsg Msg
-		err := json.Unmarshal(postdata,&entermsg)
+		err := json.Unmarshal(postdata, &entermsg)
 		if err != nil {
 			Log(err)
 		}
-		if pred.(func(entermsg Msg)bool)(entermsg) {
+		if pred.(func(entermsg Msg) bool)(entermsg) {
 			result := act.(Controller).Excute(entermsg)
 			conn.Write(result)
 			return
@@ -85,25 +86,24 @@ func TaskDeliver(postdata []byte,conn net.Conn){
 	一个controller实例, 注意： 所有的controller必须在init()函数内注册后才能被router分配
 */
 
-
-type EchoController struct  {
-
+type EchoController struct {
 }
 
-func (this *EchoController) Excute(message Msg)[]byte {
-	mirrormsg,err :=json.Marshal(message)
+func (this *EchoController) Excute(message Msg) []byte {
+	mirrormsg, err := json.Marshal(message)
 	Log("echo the message:", string(mirrormsg))
 	CheckError(err)
 	return mirrormsg
 }
 
-
 func init() {
 	var echo EchoController
-	routers = make([][2]interface{} ,0 , 20)
-	Route(func(entry Msg)bool{
-		if entry.Meta["meta"]=="test"{
-			return true}
-		return  false
-	},&echo)
+	routers = make([][2]interface{}, 0, 20)
+	Route(func(entry Msg) bool {
+		if entry.Meta["meta"] == "test" {
+			time.Sleep(1)
+			return true
+		}
+		return false
+	}, &echo)
 }

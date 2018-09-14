@@ -2,3 +2,9 @@
 *.yaml
 *.iml
 *.DS_Store
+
+server/\.vscode/launch\.json
+
+server/\.vscode/
+
+client/\.vscode/
